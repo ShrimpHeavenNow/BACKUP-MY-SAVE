@@ -48,7 +48,7 @@ move_to_backup(walk)
 
 #wait for a bit
 
-newwalk = dean_walk(path)
+newWalk = dean_walk(path)
 
 
 
