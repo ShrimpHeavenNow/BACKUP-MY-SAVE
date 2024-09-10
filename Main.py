@@ -1,7 +1,7 @@
 import shutil
 import os
 
-path  = "//SCENIC-EXPRESS/Public/2024/"
+path  = "//SCENIC-EXPRESS/Public/2024/EMMYS"
 backupPath = "C:/Users/wrigh/OneDrive/Documents/Dean Server backup/"
 deanWalk =[]
 def dean_walk(_path):
@@ -24,31 +24,82 @@ def write_file(name, toWrite):
 
 def move_to_backup(walkdict): #Backup all these files locally with correct directories.
     progress = 0
+    backupFilePaths = {}
     for x in walkdict:
         newdir = ""
         y= x.split("/")
         for z in y:
             if z != "" and z != "SCENIC-EXPRESS" and z != "Public":
+                if "." in z:
+                    _fileName = z
+
                 if "." not in z:
                     newdir += z + "/"
-        os.makedirs(os.path.dirname(backupPath+ newdir), exist_ok=True)
-        shutil.copy(x, (backupPath+ newdir))
+
+        newFilePath = backupPath + newdir
+        new_name = version_check(_fileName, newFilePath, walkdict[x])
+
+        os.makedirs(os.path.dirname(newFilePath), exist_ok=True)
+        if not os.path.isfile(newFilePath + new_name):
+            shutil.copy(x, newFilePath)
+            os.renames(newFilePath + _fileName, newFilePath + new_name)
+
+        backupFilePaths[newFilePath+ (os.path.basename(x))] = walkdict[x]
         print("Moved: ",x)
         progress +=1
         print(progress, " / ", str(len(walkdict)))
+    return backupFilePaths
+
+def check_for_updates(oldWalk):
+    newWalk = dean_walk(path)
+    updates = {}
+    for x in newWalk:
+        if x not in oldWalk:
+            updates[x] = newWalk[x]
+            print("New File: ",x,newWalk[x])
+        elif float(newWalk[x]) > float(oldWalk[x]):
+            print(x, "new walk ", newWalk[x], " old walk ", oldWalk[x])
+            #Add to list of update to be copied
+            updates[x]= newWalk[x]
+    return updates
+
+def version_check(file,_path,modified):
+    versions = []
+    newName=file.split(".")
+    fileName = newName[0]
+    newName = str((newName[0] + '-' + modified.split('.')[0])+ "." + newName[1])
+
+
+    for x in os.listdir(_path):   #if there are now more than three backups, get rid of the oldest.
+
+        if fileName in x:
+            versions.append(x)
+    if len(versions) > 3:
+        print ('Time to kill')  #Destroy oldest version.
+
+    return newName
+
+
+
+
 
 walk = dean_walk(path)
 write_file("latest", walk)
-move_to_backup(walk)
+newPaths = move_to_backup(walk)
+print(newPaths)
 
 
-#TODO: Initial check to see if file is there at all. add if not.
-#TODO: Do the check again after x amount of time. If there is a newer version, back that up with a number appended.
-#TODO: keep only the latest 3 changes. delete the older.
 
 #wait for a bit
+input()
 
-newWalk = dean_walk(path)
+newVersions = check_for_updates(walk)
+move_to_backup(newVersions)
+
+
+
+
+
 
 
 
