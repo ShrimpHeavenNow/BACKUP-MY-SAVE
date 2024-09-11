@@ -1,12 +1,13 @@
 import shutil
 import os
 
-path  = "//SCENIC-EXPRESS/Public/2024/EMMYS"
-backupPath = "C:/Users/wrigh/OneDrive/Documents/Dean Server backup/"
+path  = "//SCENIC-EXPRESS/Public/2024/EMMYS" #The older we want to backup from
+backupPath = "C:/Users/wrigh/OneDrive/Documents/Dean Server backup/"  #The Folder we cant to backup to.
 deanWalk =[]
-def dean_walk(_path):
+
+def dean_walk(_path): #Walks through the path finding files with "dean" in the filename
     deanFilesLatest = {}
-    for (root,dirs,files) in os.walk(_path,topdown=True): #Finds every file with "dean" in it within the path.
+    for (root,dirs,files) in os.walk(_path,topdown=True):
       for x in files:
           if "dean" in x.lower():
               deanWalk.append(root+"/"+x) #adds the filepath+filename to a list.
@@ -15,42 +16,43 @@ def dean_walk(_path):
         deanFilesLatest[x] = str(os.path.getmtime(x)) #Makes a dictionary with file names and date modified times.
     return (deanFilesLatest)
 
-def write_file(name, toWrite):
+def write_file(name, toWrite): #Creates text document of whatever is fed to it
     title = name+".txt"
     f = open(title, "w")
     for x in toWrite:
         f.write(x + "," + toWrite[x] + "\n") #Writes this to a file.
     f.close()
 
-def move_to_backup(walkdict): #Backup all these files locally with correct directories.
+def move_to_backup(walkdict): #Backup all these files locally with correct directories
     progress = 0
     backupFilePaths = {}
     for x in walkdict:
         newdir = ""
         y= x.split("/")
         for z in y:
-            if z != "" and z != "SCENIC-EXPRESS" and z != "Public":
-                if "." in z:
-                    _fileName = z
+            if z != "" and z != "SCENIC-EXPRESS" and z != "Public": #This gets rid of some layers to keep ther backup cleaner. Not fully needed.
+                if "." in z: #Finds the File name
+                    _fileName = z 
 
-                if "." not in z:
+                if "." not in z: #makes new new filepath
                     newdir += z + "/"
 
         newFilePath = backupPath + newdir
-        new_name = version_check(_fileName, newFilePath, walkdict[x])
+        new_name = version_check(_fileName, newFilePath, walkdict[x]) #adds modification time, purges oldest versions.
 
         os.makedirs(os.path.dirname(newFilePath), exist_ok=True)
-        if not os.path.isfile(newFilePath + new_name):
+        if not os.path.isfile(newFilePath + new_name): #Checks if this same file and name is already there.
             shutil.copy(x, newFilePath)
             os.renames(newFilePath + _fileName, newFilePath + new_name)
 
-        backupFilePaths[newFilePath+ (os.path.basename(x))] = walkdict[x]
+        backupFilePaths[newFilePath+ (os.path.basename(x))] = walkdict[x] #TODO: This is probably also now wrong.
         print("Moved: ",x)
         progress +=1
         print(progress, " / ", str(len(walkdict)))
+        
     return backupFilePaths
 
-def check_for_updates(oldWalk):
+def check_for_updates(oldWalk):  #TODO: This is probably totally wrong now.
     newWalk = dean_walk(path)
     updates = {}
     for x in newWalk:
@@ -63,7 +65,7 @@ def check_for_updates(oldWalk):
             updates[x]= newWalk[x]
     return updates
 
-def version_check(file,_path,modified):
+def version_check(file,_path,modified): #TODO: Should this be two functions? rename and purge versions?
     versions = []
     newName=file.split(".")
     fileName = newName[0]
