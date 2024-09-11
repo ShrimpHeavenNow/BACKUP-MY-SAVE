@@ -71,11 +71,19 @@ def version_check(file,_path,modified):
 
 
     for x in os.listdir(_path):   #if there are now more than three backups, get rid of the oldest.
-
         if fileName in x:
             versions.append(x)
+
+    vers_modified = []
     if len(versions) > 3:
         print ('Time to kill')  #Destroy oldest version.
+        for x in  versions: #get file names of every version.
+            x.split('-')  #TODO: check if there is more than one hyphen and use the last one.
+            vers_modified.append(x[1])
+        vers_modified.sort(reverse = True)
+        to_delete = file+'-'+vers_modified[0]
+        os.remove(_path + to_delete)
+        #get rid of oldest.
 
     return newName
 
