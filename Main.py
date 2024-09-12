@@ -129,7 +129,7 @@ while True:
         newVersions = check_for_updates(newVersions)
         move_to_backup(newVersions)
         write_file(backupLog, dean_walk(path))
-    time.sleep(900)
+    time.sleep(420)
 
 
 
