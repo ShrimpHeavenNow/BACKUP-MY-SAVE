@@ -3,8 +3,8 @@ import os
 import time
 import datetime
 
-path  = "//SCENIC-EXPRESS/Public/2024/" #The older we want to back up from
-backupPath = "C:/Users/wrigh/OneDrive/Documents/Dean Server backup/"  #The Folder we cant to back up to.
+path  = "//SCENIC-EXPRESS/Public/2024/" #The folder we want to back up from
+backupPath = "C:/Users/wrigh/OneDrive/Documents/Dean Server backup/"  #The folder we want to back up to.
 deanWalk =[]
 backupLog = "latest.txt"
 
@@ -30,9 +30,22 @@ def walk_from_file(name):
     with open(name) as f:
         to_dict = [line.rstrip().split("\n") for line in f]
         for x in to_dict:
-            x = x[0].split(",")
+            x = split_at_last_comma(x[0])
             file_dict[x[0]] = x[1]
     return file_dict
+
+def split_at_last_comma(input_string):
+    # Find the position of the last comma
+    last_comma_index = input_string.rfind(',')
+
+    # If there is no comma, return the original string
+    if last_comma_index == -1:
+        return input_string, ""
+
+    # Split the string at the last comma
+    part1 = input_string[:last_comma_index].strip()
+    part2 = input_string[last_comma_index + 1:].strip()
+    return (part1, part2)
 
 def move_to_backup(walkdict): #Backup all these files locally with correct directories
     print ("Backing up", str(len(walkdict)), "files.")
@@ -121,17 +134,16 @@ def hyphen_checker3000(file):
 
 
 while True:
+    walkies = dean_walk(path)
     print("Checking for Updates", datetime.datetime.now())
-    if walk_from_file(backupLog) == dean_walk(path):
+    if walk_from_file(backupLog) == walkies:
         print("No changes.")
     else:
-        newVersions = walk_from_file(backupLog)
-        newVersions = check_for_updates(newVersions)
-        move_to_backup(newVersions)
-        write_file(backupLog, dean_walk(path))
+        move_to_backup(check_for_updates(walk_from_file(backupLog)))
+        write_file(backupLog, walkies)
     time.sleep(420)
 
-
+#TODO: Add way to detect files that are now deleted. Maybe thats a seperate program. Or another thread here.
 
 
 
