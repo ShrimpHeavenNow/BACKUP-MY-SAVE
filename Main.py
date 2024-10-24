@@ -2,7 +2,9 @@ import shutil
 import os
 import time
 import datetime
+import pickle
 
+deleted = []
 path  = "//SCENIC-EXPRESS/Public/2024/" #The folder we want to back up from
 backupPath = "C:/Users/wrigh/OneDrive/Documents/Dean Server backup/"  #The folder we want to back up to.
 deanWalk =[]
@@ -19,36 +21,34 @@ def dean_walk(_path): #Walks through the path finding files with "dean" in the f
         dean_files_latest[x] = str(os.path.getmtime(x)) #Makes a dictionary with file names and date modified times.
     return dean_files_latest
 
-def write_file(name, to_write): #Creates text document of whatever is fed to it
-    f = open(name, "w")
-    for x in to_write:
-        f.write(x + "," + to_write[x] + "\n") #Writes this to a file.
-    f.close()
+def write_file(name, to_write): #Creates pickle of object fed into it
+    with open(name+'.dat', 'wb') as f:
+        pickle.dump(to_write, f)
 
 def walk_from_file(name):
-    file_dict = {}
-    with open(name) as f:
-        to_dict = [line.rstrip().split("\n") for line in f]
-        for x in to_dict:
-            x = split_at_last_comma(x[0])
-            file_dict[x[0]] = x[1]
+    with open(name+'.dat', 'rb') as f:
+        try:
+            file_dict = pickle.load(f)
+        except:
+            return []
     return file_dict
 
 def split_at_last_comma(input_string):
-    # Find the position of the last comma
     last_comma_index = input_string.rfind(',')
-
-    # If there is no comma, return the original string
     if last_comma_index == -1:
         return input_string, ""
-
-    # Split the string at the last comma
     part1 = input_string[:last_comma_index].strip()
     part2 = input_string[last_comma_index + 1:].strip()
     return (part1, part2)
 
 def move_to_backup(walkdict): #Backup all these files locally with correct directories
-    print ("Backing up", str(len(walkdict)), "files.")
+    if len(walkdict) == 0:
+        return
+    if len(walkdict) == 1:
+        print ("Backing up", str(len(walkdict)), "file.")
+    else:
+        print ("Backing up", str(len(walkdict)), "files.")
+    print('')
     progress = 0
     for x in walkdict:
         new_dir = ""
@@ -76,13 +76,13 @@ def move_to_backup(walkdict): #Backup all these files locally with correct direc
         progress += 1
         print(progress, " / ", str(len(walkdict)))
 
-def check_for_updates(old_walk):
+def check_for_updates(old_walk): #Compares a walk with a new walk the function does.
     new_walk = dean_walk(path)
     updates = {}
     for x in new_walk:
         if x not in old_walk:
             updates[x] = new_walk[x]
-            print("New File: ",x,new_walk[x])
+            print("New File:      ",x,new_walk[x])
         elif float(new_walk[x]) > float(old_walk[x]):
             print('Newer Version: ',x)
             updates[x]= new_walk[x] #Add to list of update to be copied
@@ -124,26 +124,37 @@ def hyphen_checker3000(file):
         return file
     else:
         file = file.split('-')
-        x=0
         add = ""
-        while x <hyphens:
+        for x in range(0,hyphens):
             add += file[x] + '-'
-            x +=1
+            x +=1  # TODO: I don't think I need this here?
         file_split = add, file[-1:][0]
         return file_split
 
 
 while True:
-    walkies = dean_walk(path)
+    deleted = walk_from_file('deleted')
     print("Checking for Updates", datetime.datetime.now())
-    if walk_from_file(backupLog) == walkies:
+    walkies = dean_walk(path)
+    previous_walkies = walk_from_file('data')
+    if previous_walkies == walkies:
         print("No changes.")
     else:
-        move_to_backup(check_for_updates(walk_from_file(backupLog)))
-        write_file(backupLog, walkies)
+        to_remove = []
+        while len(walkies) < len(previous_walkies):
+            for x in previous_walkies:
+                if x not in walkies:
+                    print (x, "was deleted since last backup.")
+                    to_remove.append(x)
+                    deleted.append(x)
+            for x in to_remove:
+                previous_walkies.pop(x)  #TODO: actually delete the file? Maybe that's a different program.
+        move_to_backup(check_for_updates(walk_from_file('data')))
+        write_file("data",walkies)
+        write_file('deleted', deleted)
+        print("No Other Changes.")
     time.sleep(420)
 
-#TODO: Add way to detect files that are now deleted. Maybe thats a seperate program. Or another thread here.
 
 
 
